@@ -110,7 +110,6 @@ set(viewer_SOURCE_FILES
     fscommon.cpp
     fsconsoleutils.cpp
     fscontactsfriendsmenu.cpp
-    fsdata.cpp
     fsdroptarget.cpp
     fsexportperms.cpp
     fsfloateraddtocontactset.cpp
@@ -932,7 +931,6 @@ set(viewer_HEADER_FILES
     fscommon.h
     fsconsoleutils.h
     fscontactsfriendsmenu.h
-    fsdata.h
     fsdroptarget.h
     fsexportperms.h
     fsfloateraddtocontactset.h
@@ -1759,7 +1757,7 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/viewer_version.txt"
            "${VIEWER_SHORT_VERSION}.${VIEWER_VERSION_REVISION}\n")
 
 set_source_files_properties(
-   llversioninfo.cpp tests/llversioninfo_test.cpp 
+   llversioninfo.cpp tests/llversioninfo_test.cpp
    PROPERTIES
 # <FS:TS> The next line causes a full rebuild of the entire newview
 #         directory every time the Mercurial revision number changes.
@@ -2118,7 +2116,7 @@ endif (WINDOWS)
 file(GLOB_RECURSE viewer_XUI_FILES LIST_DIRECTORIES FALSE
     ${CMAKE_CURRENT_SOURCE_DIR}/skins/*.xml)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/skins PREFIX "XUI Files" FILES ${viewer_XUI_FILES})
-set_source_files_properties(${viewer_XUI_FILES} 
+set_source_files_properties(${viewer_XUI_FILES}
                             PROPERTIES HEADER_FILE_ONLY TRUE)
 list(APPEND viewer_SOURCE_FILES ${viewer_XUI_FILES})
 
@@ -2126,7 +2124,7 @@ list(APPEND viewer_SOURCE_FILES ${viewer_XUI_FILES})
 file(GLOB_RECURSE viewer_SHADER_FILES LIST_DIRECTORIES FALSE
     ${CMAKE_CURRENT_SOURCE_DIR}/app_settings/shaders/*.glsl)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/app_settings/shaders PREFIX "Shaders" FILES ${viewer_SHADER_FILES})
-set_source_files_properties(${viewer_SHADER_FILES} 
+set_source_files_properties(${viewer_SHADER_FILES}
                             PROPERTIES HEADER_FILE_ONLY TRUE)
 list(APPEND viewer_SOURCE_FILES ${viewer_SHADER_FILES})
 
@@ -2175,7 +2173,7 @@ set(viewer_APPSETTINGS_FILES
     featuretable_mac.txt
     featuretable_linux.txt
     )
-	
+
 if (WINDOWS)
   LIST(APPEND viewer_APPSETTINGS_FILES app_settings/growl_notifications.xml)
 endif (WINDOWS)
@@ -2534,7 +2532,7 @@ endif (WINDOWS)
 # one of these being libz where you can find four or more versions in play
 # at once.  On Linux, libz can be found at link and run time via a number
 # of paths:
-#     
+#
 #      => -lfreetype
 #        => libz.so.1 (on install machine, not build)
 #      => -lSDL
@@ -2634,7 +2632,7 @@ set(ARTWORK_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH
 #   set(emoji_mapping_src_file
 #      "${emoji_mapping_src_folder}/${elem}/emoji_characters.xml")
 #   set(emoji_mapping_dst_file
-#      "${emoji_mapping_dst_folder}/${elem}/emoji_characters.xml")      
+#      "${emoji_mapping_dst_folder}/${elem}/emoji_characters.xml")
 #   configure_file(${emoji_mapping_src_file} ${emoji_mapping_dst_file} COPYONLY)
 #endforeach()
 # </FS:Ansariel>
@@ -2653,7 +2651,7 @@ if (LINUX)
     )
 
   add_dependencies(${VIEWER_BINARY_NAME} SLPlugin media_plugin_gstreamer10 media_plugin_cef linux-crash-logger)
-  
+
   add_custom_command(
       OUTPUT ${product}.tar.xz
       COMMAND ${PYTHON_EXECUTABLE}
@@ -2665,7 +2663,7 @@ if (LINUX)
         "--fmodstudio=${USE_FMODSTUDIO}"
         "--openal=${USE_OPENAL}"
         "--tracy=${USE_TRACY}"
-        "--avx2=${USE_AVX2_OPTIMIZATION}"        
+        "--avx2=${USE_AVX2_OPTIMIZATION}"
         --build=${CMAKE_CURRENT_BINARY_DIR}
         --buildtype=${CMAKE_BUILD_TYPE}
         "--channel=${VIEWER_CHANNEL}"
@@ -2693,7 +2691,7 @@ if (LINUX)
       "--fmodstudio=${USE_FMODSTUDIO}"
       "--openal=${USE_OPENAL}"
       "--tracy=${USE_TRACY}"
-      "--avx2=${USE_AVX2_OPTIMIZATION}"      
+      "--avx2=${USE_AVX2_OPTIMIZATION}"
       --build=${CMAKE_CURRENT_BINARY_DIR}
       --buildtype=${CMAKE_BUILD_TYPE}
       "--channel=${VIEWER_CHANNEL}"
@@ -2751,7 +2749,7 @@ if (DARWIN)
 
   # https://blog.kitware.com/upcoming-in-cmake-2-8-12-osx-rpath-support/
   set(CMAKE_MACOSX_RPATH 1)
-  
+
   set_target_properties(
     ${VIEWER_BINARY_NAME}
     PROPERTIES
@@ -2789,7 +2787,7 @@ if (DARWIN)
       "--fmodstudio=${USE_FMODSTUDIO}"
       "--openal=${USE_OPENAL}"
       "--tracy=${USE_TRACY}"
-      "--avx2=${USE_AVX2_OPTIMIZATION}"      
+      "--avx2=${USE_AVX2_OPTIMIZATION}"
       --build=${CMAKE_CURRENT_BINARY_DIR}
       --buildtype=$<CONFIG>
       --bundleid=${MACOSX_BUNDLE_GUI_IDENTIFIER}
@@ -2827,7 +2825,7 @@ if (DARWIN)
           "--fmodstudio=${USE_FMODSTUDIO}"
           "--openal=${USE_OPENAL}"
           "--tracy=${USE_TRACY}"
-          "--avx2=${USE_AVX2_OPTIMIZATION}"          
+          "--avx2=${USE_AVX2_OPTIMIZATION}"
           --build=${CMAKE_CURRENT_BINARY_DIR}
           --buildtype=${CMAKE_BUILD_TYPE}
           "--channel=${VIEWER_CHANNEL}"
@@ -2853,7 +2851,7 @@ if (PACKAGE AND (RELEASE_CRASH_REPORTING OR NON_RELEASE_CRASH_REPORTING) AND VIE
   if (USE_BUGSPLAT)
     # BugSplat symbol-file generation
     if (WINDOWS)
-      #<FS:ND> Comment this out, we do our own symbol package which also includes the exe and build_data.json 
+      #<FS:ND> Comment this out, we do our own symbol package which also includes the exe and build_data.json
       # set(VIEWER_APP_SYMBOLS_ARCHIVE "${SYMBOLS_STAGING_DIR}.sym.tar.xz")
       # set_target_properties( ${VIEWER_BINARY_NAME} PROPERTIES PDB_OUTPUT_DIRECTORY "${SYMBOLS_STAGING_DIR}")
 
@@ -2948,7 +2946,7 @@ if (LL_TESTS)
 #    llremoteparcelrequest.cpp
     llviewerhelputil.cpp
     llversioninfo.cpp
-#    llvocache.cpp  
+#    llvocache.cpp
     llworldmap.cpp
     llworldmipmap.cpp
   )
@@ -2957,7 +2955,7 @@ if (LL_TESTS)
     llworldmap.cpp
     llworldmipmap.cpp
     PROPERTIES
-    LL_TEST_ADDITIONAL_SOURCE_FILES 
+    LL_TEST_ADDITIONAL_SOURCE_FILES
     tests/llviewertexture_stub.cpp
     #llviewertexturelist.cpp
   )
@@ -2985,7 +2983,7 @@ if (LL_TESTS)
     llworldmap.cpp
     llworldmipmap.cpp
     PROPERTIES
-    LL_TEST_ADDITIONAL_SOURCE_FILES 
+    LL_TEST_ADDITIONAL_SOURCE_FILES
     tests/llviewertexture_stub.cpp
     #llviewertexturelist.cpp
   )
@@ -3000,7 +2998,7 @@ if (LL_TESTS)
     llworldmap.cpp
     llworldmipmap.cpp
     PROPERTIES
-    LL_TEST_ADDITIONAL_SOURCE_FILES 
+    LL_TEST_ADDITIONAL_SOURCE_FILES
     tests/llviewertexture_stub.cpp
   )
 

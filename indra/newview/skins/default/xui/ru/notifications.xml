@@ -4246,28 +4246,6 @@ https://wiki.firestormviewer.org/fs_voice
 	<notification name="AOImportLinkFailed">
 		Создание ссылки для анимации "[NAME]" не удалось!
 	</notification>
-	<notification name="SendSysinfoToIM">
-		Это отправит следующую информацию в текущую сессию ЛС:
-
-[SYSINFO]
-		<usetemplate name="okcancelbuttons" yestext="Отправить" notext="Отмена"/>
-	</notification>
-	<notification name="BlockLoginInfo">
-		[REASON]
-	</notification>
-	<notification name="TestversionExpired">
-		Срок действия этой тестовой версии [APP_NAME] истек, и ее нельзя использовать в дальнейшем.
-	</notification>
-	<notification name="FireStormReqInfo">
-		[NAME] просит, чтобы вы отправили информацию о ваших настройках [APP_NAME].
-(Это та же информация, которую можно найти, перейдя в Помощь -> Информация о [APP_NAME])
-[REASON]
-Хотите отправить данную информацию?
-		<form name="form">
-			<button name="Yes" text="Да"/>
-			<button name="No" text="Нет"/>
-		</form>
-	</notification>
 	<notification name="PhantomOn">
 		Фантомный режим включен.
 	</notification>
