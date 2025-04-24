@@ -385,6 +385,8 @@ CHANNEL_SIMPLE="$CHANNEL"
 if [ -z $CHANNEL ] ; then
     if [ $TARGET_PLATFORM == "darwin" ] ; then
         CHANNEL="private-`hostname -s` "
+    elif [ $TARGET_PLATFORM == "linux" ] ; then
+        CHANNEL="private-`uname -n`"
     else
         CHANNEL="private-`hostname`"
     fi
@@ -494,7 +496,7 @@ if [ $WANTS_CONFIG -eq $TRUE ] ; then
         TRACY_PROFILER="-DUSE_TRACY:BOOL=ON"
     else
         TRACY_PROFILER="-DUSE_TRACY:BOOL=OFF"
-    fi   
+    fi
     if [ $WANTS_TESTBUILD -eq $TRUE ] ; then
         TESTBUILD="-DTESTBUILD:BOOL=ON -DTESTBUILDPERIOD:STRING=$TESTBUILD_PERIOD"
     else
@@ -600,7 +602,7 @@ if [ $WANTS_CONFIG -eq $TRUE ] ; then
     if [ $? -ne 0 ]; then
         echo "Configure failed!"
         exit 1
-    fi    
+    fi
 fi
 if [ $WANTS_BUILD -eq $TRUE ] ; then
     echo "Building $TARGET_PLATFORM..."
@@ -630,7 +632,7 @@ if [ $WANTS_BUILD -eq $TRUE ] ; then
     if [ $? -ne 0 ]; then
         echo "Build failed!"
         exit 1
-    fi    
+    fi
 fi
 echo "finished"
 exit 0
