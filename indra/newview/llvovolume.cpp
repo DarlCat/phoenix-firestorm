@@ -773,7 +773,7 @@ void LLVOVolume::animateTextures()
                     // <FS:minerjr> [FIRE-35081] Blurry prims not changing with graphics settings
                     // Removed check for turning off animations
                     //if (facep->getVirtualSize() > MIN_TEX_ANIM_SIZE)
-                    // </FS:minerjr> [FIRE-35081]                    
+                    // </FS:minerjr> [FIRE-35081]
                     {
                         // Fix the one edge case missed in
                         // LLVOVolume::updateTextureVirtualSize when the
@@ -2867,6 +2867,17 @@ void LLVOVolume::syncMediaData(S32 texture_index, const LLSD &media_data, bool m
             update_from_self = (updating_agent == gAgent.getID());
         }
         viewer_media_t media_impl = LLViewerMedia::getInstance()->updateMediaImpl(mep, previous_url, update_from_self);
+
+        static LLCachedControl<bool> media_autoplay_huds(gSavedSettings, "MediaAutoPlayHuds", true);
+        bool was_loaded = media_impl->hasMedia();
+        if (media_autoplay_huds && !was_loaded)
+        {
+            std::string url = mep->getCurrentURL();
+            if (media_impl->getCurrentMediaURL() != url)
+            {
+                media_impl->navigateTo(url, "", false, true);
+            }
+        }
 
         addMediaImpl(media_impl, texture_index) ;
     }
@@ -5465,7 +5476,7 @@ bool can_batch_texture(LLFace* facep)
     // <FS:minerjr> [FIRE-35081] Blurry prims not changing with graphics settings
     // Removed check for turning off animations
     if (facep->isState(LLFace::TEXTURE_ANIM))//&& facep->getVirtualSize() > MIN_TEX_ANIM_SIZE)
-    // </FS:minerjr> [FIRE-35081] 
+    // </FS:minerjr> [FIRE-35081]
     { //texture animation breaks batches
         return false;
     }
