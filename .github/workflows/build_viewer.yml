@@ -5,39 +5,60 @@ on:
       include_tracy:
         description: 'Include tracy profiling builds'
         required: false
-        default: 'false'
-      override_signing:
-        description: 'Manual builds are not signned by default. Force code signing for this run.'
+        default: false
+        type: boolean
+      signing:
+        description: 'Enable code signing'
         required: false
-        default: 'false'
+        default: false
+        type: boolean
+      private_3ps:
+        description: 'Use private 3p packages'
+        required: false
+        default: false
+        type: boolean
+      rclone_upload:
+        description: 'Upload via rclone'
+        required: false
+        default: false
+        type: boolean
+      extra_args:
+        description: 'Extra arguments for autobuild'
+        required: false
+        default: '-DUSE_FMODSTUDIO=OFF -DUSE_KDU=OFF -DLL_TESTS:BOOL=FALSE -DUSE_BUGSPLAT:BOOL=OFF'
+        type: string
   push:
     branches:
       - "Firestorm*.*.*"
       - "*alpha"
       - "*nightly"
       - "*preview"
-  schedule:
-    - cron: '00 03 * * *' # Run every day at 3am UTC
+  # schedule:
+  #   - cron: '00 03 * * *' # Run every day at 3am UTC
 env:
   AUTOBUILD_VARIABLES_FILE: ${{github.workspace}}/build-variables/variables
-  EXTRA_ARGS: -DUSE_FMODSTUDIO=ON -DUSE_KDU=ON --crashreporting
+  EXTRA_ARGS: ${{ github.event.inputs.extra_args }}
   build_secrets_checkout: ${{github.workspace}}/signing
   XZ_DEFAULTS: -T0
   FS_RELEASE_TYPE: Unknown
   platform: Unknown
   addrsize: 64
+  AUTOBUILD_CONFIG: ReleaseFS_open
   fallback_platform: ${platform}
   FS_RELEASE_CHAN: ${FS_RELEASE_TYPE}x64
   FS_GRID: "GRID FLAGS NOT SET"
-  PYTHON: 
+  PYTHON:
 
 jobs:
   build_matrix:
     strategy:
       matrix:
-        os: [macos-14,ubuntu-22.04,windows-2022]
-        grid: [sl,os]
-        variant: [regular, avx]
+        os: [ubuntu-22.04, windows-2022]
+        grid: [sl]
+        variant: [avx]
+        # os: [macos-14, ubuntu-22.04, windows-2022]
+        # grid: [sl, os]
+        # variant: [regular, avx]
     runs-on: ${{ matrix.os }}
     outputs:
       viewer_channel: ${{ steps.channel.outputs.viewer_channel }}
@@ -97,8 +118,8 @@ jobs:
 
       - name: Free Disk Space (Ubuntu)
         if: runner.os == 'Linux'
-        uses: jlumbroso/free-disk-space@main
-        with: 
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+        with:
           swap-storage: false
 
       # - name: Set gcc version on Linux
@@ -109,7 +130,8 @@ jobs:
 
 
       - name: Setup rclone and download the folder
-        uses: beqjanus/setup-rclone@main
+        if: ${{ github.event.inputs.private_3ps == 'true' }}
+        uses: beqjanus/setup-rclone@1fd82f794d71014fef3fb281d5ba23489c66ebf3
         with:
           rclone_config: ${{ secrets.RCLONE_CONFIG }}
 
@@ -119,20 +141,20 @@ jobs:
 
       - name: find channel from Branch name
         id: channel
-        run: | 
+        run: |
           if [[ "${{ github.ref_name }}" == Firestorm* ]]; then
-            FS_RELEASE_TYPE=Release
+            FS_RELEASE_TYPE=Release-TornadoSirenGHA
           elif [[ "${{ github.ref_name }}" == *review* ]]; then
-            FS_RELEASE_TYPE=Beta
+            FS_RELEASE_TYPE=Beta-TornadoSirenGHA
           elif [[ "${{ github.ref_name }}" == *alpha* ]]; then
-            FS_RELEASE_TYPE=Alpha
+            FS_RELEASE_TYPE=Alpha-TornadoSirenGHA
           elif [[ "${{ github.ref_name }}" == *nightly* ]] || [[ "${{ github.event_name }}" == 'schedule' ]]; then
-            FS_RELEASE_TYPE=Nightly
+            FS_RELEASE_TYPE=Nightly-TornadoSirenGHA
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             if [[ "${{ github.event.inputs.include_tracy }}" == "false" ]]; then
-              FS_RELEASE_TYPE=Manual
+              FS_RELEASE_TYPE=Manual-TornadoSirenGHA
             elif [[ "${{ github.event.inputs.include_tracy }}" == "true" ]]; then
-              FS_RELEASE_TYPE=Profiling
+              FS_RELEASE_TYPE=Profiling-TornadoSirenGHA
             fi
           fi
           if [[ "${{ matrix.variant }}" == "avx" ]]; then
@@ -148,7 +170,7 @@ jobs:
       - name: Check if release type is signable
         if: runner.os == 'Windows'
         run: |
-          if [[ "${FS_RELEASE_TYPE}" == "Release" || "${FS_RELEASE_TYPE}" == "Beta" ]]; then
+          if [[ "${FS_RELEASE_TYPE}" == "Release" || "${FS_RELEASE_TYPE}" == "Beta" && ${{ github.event.inputs.signing == 'true' }} ]]; then
             CODESIGNING_ENABLED=true
           else
             CODESIGNING_ENABLED=false
@@ -156,7 +178,7 @@ jobs:
           echo "CODESIGNING_ENABLED=${CODESIGNING_ENABLED}" >> $GITHUB_ENV
           echo "Codesigning enabled: ${CODESIGNING_ENABLED}"
         shell: bash
-    
+
       - name: Get the code
         uses: actions/checkout@v4
         with:
@@ -179,10 +201,11 @@ jobs:
         shell: bash
 
       - name: rclone the private 3p packages for this platform (both 64 & 32)
+        if: ${{ github.event.inputs.private_3ps == 'true' }}
         run: 'rclone copy fs_bundles: --filter "- Alpha/*" --filter "+ *${{ env.fallback_platform }}*bz2" .'
-        
+
       - name: rclone any extra private 3p packages for Alpha (allows library updates not in the main repo)
-        if: env.FS_RELEASE_TYPE == 'Alpha'
+        if: env.FS_RELEASE_TYPE == 'Alpha' && github.event.inputs.private_3ps == 'true'
         run: 'rclone copy fs_bundles:Alpha --include "*${{ env.fallback_platform }}*bz2" .'
 
       - name: set VSVER for Windows builds
@@ -191,7 +214,7 @@ jobs:
         shell: bash
 
       - name: Install certificate
-        if: runner.os == 'macOS'
+        if: ${{ runner.os == 'macOS' && github.event.inputs.signing == 'true' }}
         env:
           FS_CERT: ${{ secrets.FS_CERT }}
           FS_CERT_PASS: ${{ secrets.FS_CERT_PASS }}
@@ -218,9 +241,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y "${dependencies[@]}"
           sudo apt-get install -y wget apt-transport-https software-properties-common
-          sudo apt-get autoremove --purge 
+          sudo apt-get autoremove --purge
           sudo apt-get clean
-        
+
       - name: Install Microsoft repository GPG keys
         if: runner.os == 'Linux'
         run: |
@@ -232,13 +255,14 @@ jobs:
           pwsh -c '$PSVersionTable'
 
       - name: test macOS bundles are present
-        if: runner.os == 'MacOS'
+        if: ${{ runner.os == 'macOS' && github.event.inputs.private_3ps == 'true' }}
         run: |
           dirlisting="$(ls -l ${{ github.workspace }}${path_sep}${pattern})"
           echo "${dirlisting}"
         shell: bash
 
       - name: edit installables
+        if: ${{ github.event.inputs.private_3ps == 'true' }}
         run: |
           path_sep="/"
           if [[ "${{ runner.os }}" == "Windows" ]]; then
@@ -259,7 +283,7 @@ jobs:
             full_package_path="${{ github.workspace }}${path_sep}${package_file}"
             if [ -n "$package_file" ]; then
               echo "Installing ${package_file}"
-              autobuild installables remove ${package} 
+              autobuild installables remove ${package}
               autobuild installables add ${package} platform=${{ env.platform }} url="file:///${full_package_path}"
             else
               echo "No bundle found for ${package} on ${{ env.platform }}"
@@ -267,7 +291,7 @@ jobs:
               full_package_path="${{ github.workspace }}${path_sep}${package_file}"
               if [ -n "$package_file" ]; then
                 echo "Installing ${package_file}"
-                autobuild installables remove ${package} 
+                autobuild installables remove ${package}
                 autobuild installables add ${package} platform=${{ env.fallback_platform }} url="file:///${full_package_path}"
               else
                 echo "No bundle found for ${package} on ${{ env.fallback_platform }}. Package will not be available for build."
@@ -314,11 +338,11 @@ jobs:
         shell: bash
       - name: Configure
         run: |
-          autobuild configure -c ReleaseFS -A${addrsize} -- --package --chan ${{env.FS_RELEASE_CHAN}} ${{env.EXTRA_ARGS}} ${{env.FS_GRID}}
+          autobuild configure -c ${AUTOBUILD_CONFIG} -A${addrsize} -- --ninja --package --chan ${{env.FS_RELEASE_CHAN}} ${{env.EXTRA_ARGS}} ${{env.FS_GRID}}
           echo "BUGSPLAT_DB=$BUGSPLAT_DB" >> $GITHUB_ENV
         shell: bash
       - name: Generate metadata.json
-        if: runner.os == 'Windows'
+        if: ${{ runner.os == 'Windows' && env.CODESIGNING_ENABLED == 'true' }}
         run: |
           echo '{
             "Endpoint": "${{ secrets.AZURE_ENDPOINT }}",
@@ -328,10 +352,10 @@ jobs:
               "ManagedIdentityCredential"
               ]
             }' > ${{github.workspace}}/metadata.json
-          echo "CODESIGNING_METADATA_PATH=${{github.workspace}}/metadata.json" >> $env:GITHUB_ENV            
+          echo "CODESIGNING_METADATA_PATH=${{github.workspace}}/metadata.json" >> $env:GITHUB_ENV
         shell: pwsh
       - name: Validate Windows 10 SDK version and find signtool.exe IFF codesigning is enabled for these builds or overridden
-        if: ${{ runner.os == 'Windows' && (env.CODESIGNING_ENABLED == 'true' || github.event.inputs.override_signing == 'true') }}
+        if: ${{ runner.os == 'Windows' && env.CODESIGNING_ENABLED == 'true' }}
         id: validate-sdk
         run: |
           try {
@@ -359,7 +383,7 @@ jobs:
               exit 1
           }
           echo "SIGNTOOL_PATH=signtool.exe" >> $env:GITHUB_ENV
-        shell: pwsh          
+        shell: pwsh
       - name: Install nuget.exe
         if: runner.os == 'Windows'
         run: |
@@ -391,7 +415,7 @@ jobs:
         shell: bash
       - name: build
         id: build
-        run: autobuild build -c ReleaseFS -A${addrsize} --no-configure
+        run: autobuild build -c ${{ env.AUTOBUILD_CONFIG }} -A${addrsize} --no-configure
         shell: bash
       - name: Extract version number
         id: version
@@ -406,36 +430,37 @@ jobs:
           echo "viewer_build=$viewer_build" >> "$GITHUB_OUTPUT"
           echo "viewer_channel=${{ env.FS_RELEASE_CHAN }}" >> "$GITHUB_OUTPUT"
           echo "viewer_release_type=${{ env.FS_RELEASE_TYPE }}" >> "$GITHUB_OUTPUT"
-      
+
       - name: Unzip xcarchive.zip files
         if: runner.os == 'macOS'
         run: |
           find . -name '*.xcarchive.zip' -exec sh -c 'unzip -o "{}" -d "$(dirname "{}")"' \;
-      
+
 
       - name: Post Bugsplat Symbols
+        if: false
         uses: BugSplat-Git/symbol-upload@main
         with:
-          clientId: ${{ 
-            steps.version.outputs.viewer_release_type == 'Release' && secrets.BUGSPLAT_RELEASE_ID || 
-            steps.version.outputs.viewer_release_type == 'Nightly' && secrets.BUGSPLAT_NIGHTLY_ID || 
-            steps.version.outputs.viewer_release_type == 'Manual' && secrets.BUGSPLAT_MANUAL_ID || 
-            steps.version.outputs.viewer_release_type == 'Beta' && secrets.BUGSPLAT_PREVIEW_ID || 
-            steps.version.outputs.viewer_release_type == 'Alpha' && secrets.BUGSPLAT_ALPHA_ID || 
+          clientId: ${{
+            steps.version.outputs.viewer_release_type == 'Release' && secrets.BUGSPLAT_RELEASE_ID ||
+            steps.version.outputs.viewer_release_type == 'Nightly' && secrets.BUGSPLAT_NIGHTLY_ID ||
+            steps.version.outputs.viewer_release_type == 'Manual' && secrets.BUGSPLAT_MANUAL_ID ||
+            steps.version.outputs.viewer_release_type == 'Beta' && secrets.BUGSPLAT_PREVIEW_ID ||
+            steps.version.outputs.viewer_release_type == 'Alpha' && secrets.BUGSPLAT_ALPHA_ID ||
             secrets.BUGSPLAT_DEFAULT_ID }}
-          clientSecret: ${{ 
-            steps.version.outputs.viewer_release_type == 'Release' && secrets.BUGSPLAT_RELEASE_SECRET || 
-            steps.version.outputs.viewer_release_type == 'Nightly' && secrets.BUGSPLAT_NIGHTLY_SECRET || 
-            steps.version.outputs.viewer_release_type == 'Manual' && secrets.BUGSPLAT_MANUAL_SECRET || 
-            steps.version.outputs.viewer_release_type == 'Beta' && secrets.BUGSPLAT_PREVIEW_SECRET || 
-            steps.version.outputs.viewer_release_type == 'Alpha' && secrets.BUGSPLAT_ALPHA_SECRET || 
+          clientSecret: ${{
+            steps.version.outputs.viewer_release_type == 'Release' && secrets.BUGSPLAT_RELEASE_SECRET ||
+            steps.version.outputs.viewer_release_type == 'Nightly' && secrets.BUGSPLAT_NIGHTLY_SECRET ||
+            steps.version.outputs.viewer_release_type == 'Manual' && secrets.BUGSPLAT_MANUAL_SECRET ||
+            steps.version.outputs.viewer_release_type == 'Beta' && secrets.BUGSPLAT_PREVIEW_SECRET ||
+            steps.version.outputs.viewer_release_type == 'Alpha' && secrets.BUGSPLAT_ALPHA_SECRET ||
             secrets.BUGSPLAT_DEFAULT_SECRET }}
-          database: ${{ 
-            steps.version.outputs.viewer_release_type == 'Release' && secrets.BUGSPLAT_RELEASE_DB || 
-            steps.version.outputs.viewer_release_type == 'Nightly' && secrets.BUGSPLAT_NIGHTLY_DB || 
-            steps.version.outputs.viewer_release_type == 'Manual' && secrets.BUGSPLAT_MANUAL_DB || 
-            steps.version.outputs.viewer_release_type == 'Beta' && secrets.BUGSPLAT_PREVIEW_DB || 
-            steps.version.outputs.viewer_release_type == 'Alpha' && secrets.BUGSPLAT_ALPHA_DB || 
+          database: ${{
+            steps.version.outputs.viewer_release_type == 'Release' && secrets.BUGSPLAT_RELEASE_DB ||
+            steps.version.outputs.viewer_release_type == 'Nightly' && secrets.BUGSPLAT_NIGHTLY_DB ||
+            steps.version.outputs.viewer_release_type == 'Manual' && secrets.BUGSPLAT_MANUAL_DB ||
+            steps.version.outputs.viewer_release_type == 'Beta' && secrets.BUGSPLAT_PREVIEW_DB ||
+            steps.version.outputs.viewer_release_type == 'Alpha' && secrets.BUGSPLAT_ALPHA_DB ||
             secrets.BUGSPLAT_DEFAULT_DB }}
           application: "Firestorm-${{ steps.version.outputs.viewer_channel}}"
           version: ${{ steps.version.outputs.viewer_version }}.${{ steps.version.outputs.viewer_build }}
@@ -457,7 +482,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.FS_RELEASE_TYPE }}-${{ matrix.os }}-${{ matrix.variant }}-${{matrix.grid}}-artifacts.zip
-          path: | 
+          path: |
             build-linux-*/newview/*.xz
             build-linux-*/newview/*.bz2
 
@@ -495,10 +520,10 @@ jobs:
         uses: actions/download-artifact@v4
         id: download
         with:
-          path: to_deploy        
+          path: to_deploy
 
       - name: find channel and webhook from build_matrix outputs
-        run: | 
+        run: |
           viewer_release_type=${{ needs.build_matrix.outputs.viewer_release_type }}
           if [[ "$viewer_release_type" == "Release" ]]; then
             FS_RELEASE_FOLDER=release
@@ -527,9 +552,9 @@ jobs:
 
       - name: Create Build Info artifact
         env:
-          FS_VIEWER_VERSION: 
-          FS_VIEWER_BUILD: 
-          FS_VIEWER_RELEASE_TYPE: 
+          FS_VIEWER_VERSION:
+          FS_VIEWER_BUILD:
+          FS_VIEWER_RELEASE_TYPE:
         id: create_build_info
         run: |
           cat <<EOF > build_info.json
@@ -558,10 +583,12 @@ jobs:
         run: python ./fsutils/download_list.py ${{steps.download.outputs.download-path}} -w ${{ env.FS_BUILD_WEBHOOK_URL }}
 
       - name: Setup rclone and download the folder
+        if: github.event.inputs.rclone_upload == 'true'
         uses: beqjanus/setup-rclone@main
         with:
           rclone_config: ${{ secrets.RCLONE_CONFIG }}
 
       - name: Copy files to remote host
+        if: github.event.inputs.rclone_upload == 'true'
         run: rclone copy ${{steps.download.outputs.download-path}}/${{ env.FS_RELEASE_FOLDER }} fs_r2_deploy:viewerdownloads/${{ env.FS_RELEASE_FOLDER }}
 
