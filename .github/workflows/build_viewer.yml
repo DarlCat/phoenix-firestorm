@@ -27,6 +27,11 @@ on:
         required: false
         default: '-DUSE_FMODSTUDIO=OFF -DUSE_KDU=OFF -DLL_TESTS:BOOL=FALSE -DUSE_BUGSPLAT:BOOL=OFF'
         type: string
+      configuration:
+        description: 'Configuration to build'
+        required: false
+        default: 'ReleaseFS_open'
+        type: string
   push:
     branches:
       - "Firestorm*.*.*"
@@ -43,7 +48,7 @@ env:
   FS_RELEASE_TYPE: Unknown
   platform: Unknown
   addrsize: 64
-  AUTOBUILD_CONFIG: ReleaseFS_open
+  AUTOBUILD_CONFIG: ${{ github.event.inputs.configuration }}
   fallback_platform: ${platform}
   FS_RELEASE_CHAN: ${FS_RELEASE_TYPE}x64
   FS_GRID: "GRID FLAGS NOT SET"
@@ -53,7 +58,7 @@ jobs:
   build_matrix:
     strategy:
       matrix:
-        os: [ubuntu-22.04, windows-2022]
+        os: [ubuntu-22.04]
         grid: [sl]
         variant: [avx]
         # os: [macos-14, ubuntu-22.04, windows-2022]
