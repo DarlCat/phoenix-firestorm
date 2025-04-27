@@ -339,7 +339,7 @@ jobs:
         shell: bash
       - name: Configure
         run: |
-          autobuild configure -c ${AUTOBUILD_CONFIG} -A${addrsize} -- --ninja --package --chan ${{env.FS_RELEASE_CHAN}} ${{env.EXTRA_ARGS}} ${{env.FS_GRID}}
+          autobuild configure -c ${AUTOBUILD_CONFIG} -A${addrsize} -- --package --chan ${{env.FS_RELEASE_CHAN}} ${{env.EXTRA_ARGS}} ${{env.FS_GRID}}
           echo "BUGSPLAT_DB=$BUGSPLAT_DB" >> $GITHUB_ENV
         shell: bash
       - name: Generate metadata.json
