@@ -334,6 +334,7 @@ jobs:
         run: echo "EXTRA_ARGS=${{ env.EXTRA_ARGS }} --avx2" >> $GITHUB_ENV
 
       - name: Clean up packages to give more space
+        if: runner.os == 'Linux'
         run: rm *${{ env.fallback_platform }}*bz2
         shell: bash
       - name: Configure
