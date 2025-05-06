@@ -218,5 +218,12 @@
          layout="topleft"
          help_topic="preferences_backup_tab"
          name="backup" />
+        <panel
+         class="panel_preference_soundlinden"
+         filename="panel_preferences_sound_linden.xml"
+         label="LL Sound &amp; Media"
+         layout="topleft"
+         help_topic="panel_preferences_sound_linden_tab"
+         name="sound_linden" />
     </tab_container>
 </floater>

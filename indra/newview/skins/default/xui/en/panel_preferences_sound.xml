@@ -400,7 +400,7 @@
            name="1"
            top_delta="0"
            width="200" />
-        </radio_group>  
+        </radio_group>
         <text
          type="string"
          length="1"
@@ -432,7 +432,7 @@
          left_pad="0"
          height="18"
          width="85" />
-      
+
       <text
          type="string"
          length="1"
@@ -593,8 +593,46 @@
             name="autoplay_ask"
             value="2"/>-->
       </combo_box>
+      <text
+          follows="left|top"
+          layout="topleft"
+          height="15"
+          left="28"
+          top_pad="10"
+          width="105"
+          name="media_firstinteract_label">
+        Media first-interact
+      </text>
+      <combo_box
+          control_name="MediaFirstClickInteract"
+          enabled_control="AudioStreamingMedia"
+          follows="left|top"
+          layout="topleft"
+          height="23"
+          left_pad="7"
+          top_delta="-4"
+          name="media_first_interact_combo"
+          width="115"
+          tool_tip="This setting controls which media (once loaded) does not require a first click to focus before interaction can begin. This allows clicks to be passed directly to media bypassing the focus click requirement.">
+        <item
+            label="Disabled"
+            name="media_first_interact_disabled"
+            value="0"/>
+        <item
+            label="Worn HUDs only"
+            name="media_first_interact_huds"
+            value="1"/>
+        <item
+            label="Owned objects"
+            name="media_first_interact_owned"
+            value="2"/>
+        <item
+            label="Any object"
+            name="media_first_interact_any"
+            value="3"/>
+      </combo_box>
       <check_box
-         name="media_huds_autoplay"
+         name="media_autoplay_huds"
          control_name="MediaAutoPlayHuds"
          follows="left|top"
          layout="topleft"
@@ -2273,7 +2311,7 @@ Hover your mouse cursor over UUID field to show its default value.
      follows="all"
      label="UI Sounds 2"
      name="UI Sounds tab 2">
-     
+
         <text
          layout="topleft"
          follows="left|top"
